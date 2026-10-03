@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pakistan AD–AS Equilibrium Simulator</title>
+<style>
+:root{--bg:#eef7f1;--card:#fff;--text:#173b2a;--muted:#5f7569;--line:#cfe2d5;--blue:#006b3f;--red:#e53935;--green:#006b3f;--purple:#0b7a4b;--gold:#f4c542}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif}
+.app{max-width:1180px;margin:0 auto;padding:24px}.top{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:18px}.top h1{margin:0 0 5px;font-size:27px}.top p{margin:0;color:var(--muted)}
+.layout{display:grid;grid-template-columns:340px 1fr;gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+h2,h3{margin:0 0 14px}.control{margin:17px 0}.control-head{display:flex;justify-content:space-between;gap:10px;font-size:14px;font-weight:700}.value{color:var(--blue);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--blue);margin:10px 0 4px}.scale{display:flex;justify-content:space-between;color:#89919b;font-size:11px}
+select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:white;font-size:14px}
+.buttons{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:8px;padding:10px 13px;background:#e9eef7;color:#25344d;font-weight:700;cursor:pointer}.btn.primary{background:var(--blue);color:#fff}.btn:hover{filter:brightness(.97)}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}.metric{border:1px solid var(--line);border-radius:10px;padding:11px;background:#fafbfc}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{display:block;font-size:19px;margin-top:4px}
+.status{border-radius:9px;background:#f5f7fa;padding:10px 12px;margin-bottom:13px;font-size:13px}.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:10px 0}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+canvas{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+.help{font-size:12px;color:var(--muted);line-height:1.5;margin-top:12px}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.top{display:block}}
+.flag-title{display:inline-flex;align-items:center;gap:8px;color:#006b3f;font-weight:800;letter-spacing:.08em;font-size:12px;margin-bottom:6px}.crescent{font-size:18px}.top h1{color:#006b3f}.btn.primary{background:#006b3f}.btn{border:1px solid #cfe2d5}input[type=range]{accent-color:#006b3f}.metric strong,.value{color:#006b3f}.status{border-left:4px solid #006b3f;background:#f1f8f3}.legend{color:#557062}body:before{content:"";display:block;height:5px;background:#006b3f;position:fixed;top:0;left:0;right:0;z-index:10}canvas{border:2px solid #cfe2d5} .help b{color:#006b3f} 
+.warning-overlay{display:none;position:fixed;inset:0;background:rgba(12,35,24,.55);z-index:100;align-items:center;justify-content:center;padding:20px}.warning-overlay.show{display:flex}.warning-box{width:min(500px,100%);background:#fff;border:3px solid #e53935;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.25);padding:24px;text-align:center}.warning-icon{font-size:42px;margin-bottom:8px}.warning-box h2{color:#b91c1c;margin:0 0 10px;font-size:24px}.warning-box p{color:#53665c;line-height:1.55;margin:8px 0 18px}.warning-box .btn{background:#006b3f;color:#fff;border:0}.warning-tag{display:inline-block;background:#fff1f1;color:#b91c1c;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:800;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="warning-overlay" id="warningOverlay" role="dialog" aria-modal="true" aria-labelledby="warningTitle">
+  <div class="warning-box">
+    <div class="warning-icon">⚠️🇵🇰</div>
+    <div class="warning-tag">SIMULATION WARNING</div>
+    <h2 id="warningTitle">Protests/Military intervention Likely</h2>
+    <p>This message is a fictional teaching-game warning triggered by severe simulated economic conditions. It is not a real-world prediction.</p>
+    <button class="btn" id="closeWarning">Continue simulation</button>
+  </div>
+</div>
+<div class="app">
+  <div class="top">
+    <div><h1>AD–AS Macro Simulator</h1><p>Standard AD–AS relationships: AD slopes down, SRAS slopes up, and LRAS is vertical.</p></div>
+    <button class="btn primary" id="reset">Reset simulation</button>
+  </div>
+
+  <div class="layout">
+    <aside class="card">
+      <h2>🇵🇰 Economic controls</h2>
+
+      <div class="control">
+        <div class="control-head"><span>Aggregate Demand (AD)</span><span class="value" id="adVal"></span></div>
+        <input id="ad" type="range" min="60" max="160" value="100" step="1">
+        <div class="scale"><span>Low</span><span>High</span></div>
+      </div>
+
+      <div class="control">
+        <div class="control-head"><span>Short-run supply (SRAS)</span><span class="value" id="srasVal"></span></div>
+        <input id="sras" type="range" min="0" max="70" value="20" step="1">
+        <div class="scale"><span>Expansion</span><span>Cost pressure</span></div>
+      </div>
+
+      <div class="control">
+        <div class="control-head"><span>SRAS slope</span><span class="value" id="slopeVal"></span></div>
+        <input id="slope" type="range" min="0.2" max="1.8" value="0.8" step="0.1">
+        <div class="scale"><span>Flat</span><span>Steep</span></div>
+      </div>
+
+      <div class="control">
+        <div class="control-head"><span>Potential GDP / Capacity (LRAS)</span><span class="value" id="lrasVal"></span></div>
+        <input id="lras" type="range" min="60" max="140" value="100" step="1">
+        <div class="scale"><span>Low capacity</span><span>High capacity</span></div>
+      </div>
+
+      <h3>Policy / shock presets</h3>
+      <select id="preset">
+        <option value="">Choose a scenario…</option>
+        <option value="recession">Pakistan demand slowdown</option>
+        <option value="boom">Pakistan demand expansion</option>
+        <option value="supplybad">Pakistan cost / supply shock</option>
+        <option value="supplygood">Pakistan productivity improvement</option>
+        <option value="potential">Increase Pakistan productive capacity</option>
+      </select>
+      <div class="buttons">
+        <button class="btn" id="apply">Apply scenario</button>
+        <button class="btn" id="undo">Undo</button>
+      </div>
+      <div class="help">🇵🇰 <b>Pakistan learning mode:</b> this simplified model keeps AD, SRAS and LRAS meeting at one common long-run equilibrium. The sliders therefore move the equilibrium rather than creating an output gap.</div>
+    </aside>
+
+    <main class="card">
+      <div class="metrics">
+        <div class="metric"><small>Equilibrium GDP (index)</small><strong id="eq">—</strong></div>
+        <div class="metric"><small>Price level (index)</small><strong id="price">—</strong></div>
+        <div class="metric"><small>Output gap</small><strong id="gap">—</strong></div>
+        <div class="metric"><small>Gap % of potential</small><strong id="gapPct">—</strong></div>
+      </div>
+      <div class="status" id="status" aria-live="polite">—</div>
+<div class="status" id="direction" aria-live="polite">🇵🇰 Long-run equilibrium mode: AD, SRAS and LRAS meet at E.</div>
+      <div class="legend">
+        <span><i class="dot" style="background:#006b3f"></i>AD</span>
+        <span><i class="dot" style="background:#e53935"></i>SRAS</span>
+        <span><i class="dot" style="background:#006b3f"></i>LRAS / potential GDP</span>
+        <span><i class="dot" style="background:#173b2a"></i>Equilibrium</span>
+      </div>
+      <canvas id="chart" width="820" height="500"></canvas>
+      <div class="help">
+        <b>STANDARD AD-AS RULES:</b>
+        AD is downward sloping; a rightward AD shift raises both output and the price level.
+        SRAS is upward sloping; a left/up SRAS shift lowers output and raises the price level,
+        while a right/down shift raises output and lowers the price level.
+        LRAS is vertical at potential GDP. The intersection of AD and SRAS gives the
+        short-run equilibrium; comparing that output with LRAS gives the recessionary or
+        inflationary gap.
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+const ids=["ad","sras","slope","lras"];
+const el=id=>document.getElementById(id);
+const state={ad:100,sras:20,slope:.8,lras:100};
+let history=[];
+
+function read(){
+  state.ad=+el("ad").value; state.sras=+el("sras").value;
+  state.slope=+el("slope").value; state.lras=+el("lras").value;
+}
+function write(){
+  for(const id of ids) el(id).value=state[id];
+}
+function updateLabels(){
+  el("adVal").textContent=state.ad;
+  el("srasVal").textContent=state.sras;
+  el("slopeVal").textContent=state.slope.toFixed(1);
+  el("lrasVal").textContent=state.lras;
+}
+let warningShown=false;
+let lastSliderValues={ad:state.ad,sras:state.sras,slope:state.slope,lras:state.lras};
+function severeConditions(){
+  // Deliberately broad game thresholds: the popup is triggered by extreme slider settings.
+  return state.ad <= 70 || state.ad >= 150 || state.sras >= 55 || state.lras <= 70 || state.slope >= 1.7;
+}
+function checkWarning(force=false){
+  const overlay=el("warningOverlay");
+  if(!overlay)return;
+  if(severeConditions() && (!warningShown || force)){
+    overlay.classList.add("show");
+    warningShown=true;
+  }
+}
+function checkSliderDecision(id){
+  const current=+el(id).value;
+  const lowered=current < lastSliderValues[id];
+  lastSliderValues[id]=current;
+  // In this teaching-game mode, every downward slider decision is treated as a
+  // potentially destabilizing choice and re-arms the warning. This means the
+  // warning can appear again after it has been dismissed.
+  if(lowered){
+    warningShown=false;
+    const overlay=el("warningOverlay");
+    if(overlay) overlay.classList.add("show");
+    warningShown=true;
+  }
+}
+function calculate(){
+  read(); updateLabels();
+  checkWarning();
+
+  // PAKISTAN LONG-RUN EQUILIBRIUM MODE
+  // The three curves are deliberately anchored to one common equilibrium E.
+  // Each slider changes the location of E; LRAS is then drawn through E.
+  // This is a teaching mode rather than a conventional output-gap model.
+  const Q = state.lras + (state.ad - 100) * 0.35 - (state.sras - 20) * 0.45;
+  const P = 100 + (state.ad - 100) * 0.22 + (state.sras - 20) * 0.55;
+  const gap = 0;
+  const pct = 0;
+
+  el("eq").textContent = Q.toFixed(1);
+  el("price").textContent = P.toFixed(1);
+  el("gap").textContent = "0.0";
+  el("gapPct").textContent = "0.0%";
+  el("status").textContent = "Long-run equilibrium: AD, SRAS and LRAS all intersect at E. The sliders shift that common equilibrium.";
+
+  const direction = el("direction");
+  if (direction) {
+    if (state.ad > 100) direction.textContent = "AD: stronger aggregate demand shifts the common equilibrium to higher output and a higher price level.";
+    else if (state.ad < 100) direction.textContent = "AD: weaker aggregate demand shifts the common equilibrium to lower output and a lower price level.";
+    else if (state.sras > 20) direction.textContent = "SRAS: higher cost pressure shifts the common equilibrium toward lower output and a higher price level.";
+    else if (state.sras < 20) direction.textContent = "SRAS: lower cost pressure shifts the common equilibrium toward higher output and a lower price level.";
+    else if (state.lras > 100) direction.textContent = "LRAS: higher productive capacity moves the common equilibrium to higher potential output.";
+    else if (state.lras < 100) direction.textContent = "LRAS: lower productive capacity moves the common equilibrium to lower potential output.";
+    else direction.textContent = "🇵🇰 Long-run equilibrium mode: AD slopes down, SRAS slopes up, and LRAS is vertical through the same equilibrium point E.";
+  }
+  draw(Q,P);
+}
+
+function draw(Q,P){
+  const c=el("chart"),ctx=c.getContext("2d"),W=c.width,H=c.height;
+  const b=0.5, baseP=100;
+  ctx.clearRect(0,0,W,H);
+  const L=75,R=W-35,T=35,B=H-65;
+  const xmax=Math.max(160, Q*1.55, Q+55, 140);
+  const leftY=baseP + 35 + state.slope*Q;
+  const rightY=baseP - 35 - b*Q;
+  const pmax=Math.max(150, P+45, leftY, rightY, P+state.slope*45);
+  const X=y=>L+y/xmax*(R-L);
+  const Y=p=>B-p/pmax*(B-T);
+
+  // Axes and grid
+  ctx.strokeStyle="#355548";ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(L,T);ctx.lineTo(L,B);ctx.lineTo(R,B);ctx.stroke();
+  ctx.strokeStyle="#dfece3";ctx.lineWidth=1;ctx.font="11px Arial";ctx.fillStyle="#668073";
+  for(let i=1;i<=5;i++){
+    const x=L+(R-L)*i/5, y=B-(B-T)*i/5;
+    ctx.beginPath();ctx.moveTo(x,T);ctx.lineTo(x,B);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();
+    ctx.fillText(Math.round(xmax*i/5),x-10,B+18);
+    ctx.fillText(Math.round(pmax*i/5),L-30,y+4);
+  }
+
+  ctx.save();ctx.beginPath();ctx.rect(L,T,R-L,B-T);ctx.clip();
+
+  // Curves are constructed to pass through the exact same point E.
+  // AD: downward from E
+  ctx.strokeStyle="#006b3f";ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(X(0),Y(P+b*Q));ctx.lineTo(X(xmax),Y(P-b*(xmax-Q)));ctx.stroke();
+
+  // SRAS: upward from E
+  ctx.strokeStyle="#e53935";ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(X(0),Y(P-state.slope*Q));ctx.lineTo(X(xmax),Y(P+state.slope*(xmax-Q)));ctx.stroke();
+
+  // LRAS: vertical THROUGH E
+  ctx.strokeStyle="#006b3f";ctx.lineWidth=3;ctx.setLineDash([9,6]);
+  ctx.beginPath();ctx.moveTo(X(Q),T);ctx.lineTo(X(Q),B);ctx.stroke();ctx.setLineDash([]);
+
+  // Common equilibrium
+  ctx.fillStyle="#173b2a";ctx.beginPath();ctx.arc(X(Q),Y(P),7,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle="#f4c542";ctx.lineWidth=3;ctx.beginPath();ctx.arc(X(Q),Y(P),10,0,Math.PI*2);ctx.stroke();
+
+  ctx.strokeStyle="#173b2a";ctx.lineWidth=1;ctx.setLineDash([3,4]);ctx.beginPath();
+  ctx.moveTo(X(Q),Y(P));ctx.lineTo(X(Q),B);ctx.moveTo(X(Q),Y(P));ctx.lineTo(L,Y(P));ctx.stroke();ctx.setLineDash([]);
+
+  // Labels
+  ctx.font="bold 13px Arial";
+  ctx.fillStyle="#006b3f";ctx.fillText("AD",Math.min(X(Q*.45),R-30),Math.max(Y(P+b*Q*.55)-8,T+15));
+  ctx.fillStyle="#e53935";ctx.fillText("SRAS",Math.min(X(Q+35),R-50),Math.max(Y(P+state.slope*35)-8,T+15));
+  ctx.fillStyle="#006b3f";ctx.fillText("LRAS",Math.min(X(Q)+7,R-40),T+16);
+  ctx.fillStyle="#173b2a";ctx.fillText("E",Math.min(X(Q)+12,R-15),Math.max(Y(P)-12,T+15));
+  ctx.restore();
+
+  ctx.font="12px Arial";ctx.fillStyle="#557062";ctx.fillText("Real GDP (index)",R-95,B+42);
+  ctx.save();ctx.translate(19,190);ctx.rotate(-Math.PI/2);ctx.fillText("Price Level (index)",0,0);ctx.restore();
+
+  // Small Pakistan footer inside the chart
+  ctx.font="bold 11px Arial";ctx.fillStyle="#006b3f";ctx.fillText("🇵🇰 PAKISTAN — LONG-RUN EQUILIBRIUM",L+8,T+16);
+}
+function snapshot(){return {...state}}
+function applyScenario(){
+  const v=el("preset").value;if(!v)return;
+  history.push(snapshot());
+  if(v==="recession") state.ad=80;
+  if(v==="boom") state.ad=125;
+  if(v==="supplybad") state.sras=38;
+  if(v==="supplygood") state.sras=5;
+  if(v==="potential") state.lras=120;
+  write();calculate();el("preset").value="";
+}
+el("closeWarning").onclick=()=>el("warningOverlay").classList.remove("show");
+el("warningOverlay").addEventListener("click",e=>{if(e.target===el("warningOverlay"))el("warningOverlay").classList.remove("show")});
+el("apply").onclick=applyScenario;
+el("undo").onclick=()=>{if(history.length){Object.assign(state,history.pop());write();calculate()}};
+el("reset").onclick=()=>{history=[];warningShown=false;el("warningOverlay").classList.remove("show");Object.assign(state,{ad:100,sras:20,slope:.8,lras:100});write();lastSliderValues={...state};calculate()};
+ids.forEach(id=>el(id).addEventListener("input",()=>{checkSliderDecision(id);calculate()}));
+write();calculate();
+</script>
+</body>
+</html>
